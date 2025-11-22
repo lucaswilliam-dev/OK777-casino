@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useMainContent } from '../../context/MainContentProvider'
 import { useModal } from '../../context/ModalProvider'
 import { useI18n } from '../../context/I18nProvider'
@@ -239,17 +240,35 @@ const SectionHeader: React.FC<{
   icon: string
   title: string
   alt: string
-}> = ({ icon, title, alt }) => (
-  <div className="flex items-center justify-between mb-4">
-    <h2 className="text-4.5 font-bold flex items-center text-white gap-2">
-      <img className="grayscale" src={icon} alt={alt} />
-      {title}
-    </h2>
-    <span className="font-bold flex items-center text-[14px] text-dodger-blue">
-      <span>all 13</span>
-    </span>
-  </div>
-)
+  count?: number
+  categoryType?: string
+}> = ({ icon, title, alt, count, categoryType }) => {
+  const router = useRouter()
+  
+  const handleViewAll = () => {
+    const params = new URLSearchParams()
+    if (categoryType) {
+      params.append('categoryType', categoryType)
+    }
+    params.append('category', title)
+    router.push(`/casino/view-all?${params.toString()}`)
+  }
+
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="text-4.5 font-bold flex items-center text-white gap-2">
+        <img className="grayscale" src={icon} alt={alt} />
+        {title}
+      </h2>
+      <button
+        onClick={handleViewAll}
+        className="font-bold flex items-center text-[14px] text-dodger-blue hover:text-[#1a6fd4] transition-colors cursor-pointer"
+      >
+        <span>all {count || 13}</span>
+      </button>
+    </div>
+  )
+}
 
 export default function CasinoPage() {
   const { t } = useI18n()
@@ -300,7 +319,6 @@ export default function CasinoPage() {
           icon="/icons/Casino1.svg"
           count={104}
         />
-
         <GameGrid
           data={[]}
           renderCard={(card, index) => <CasinoCard key={index} {...card} />}

@@ -3,7 +3,7 @@
 import React from 'react'
 
 export interface CasinoCardProps {
-  badge: string
+  badge?: string
   views?: string
   user?: string
   image: string
@@ -16,13 +16,16 @@ const CasinoCard: React.FC<CasinoCardProps> = ({
   views,
 }) => {
   const getBadgeColor = (badgeType: string): string => {
-    switch (badgeType) {
+    // Normalize to uppercase for case-insensitive matching
+    const normalizedBadge = badgeType?.toUpperCase() || ''
+    
+    switch (normalizedBadge) {
       case 'HOT':
-        return 'bg-[#ED1D49]'
+        return 'bg-[#FFAB00]' // Yellow for Hot
       case 'NEW':
-        return 'bg-[#1BB83D]'
+        return 'bg-[#1BB83D]' // Green for New
       default:
-        return 'bg-[#FFAB00]'
+        return 'bg-[#FFAB00]' // Default yellow
     }
   }
 
@@ -38,13 +41,15 @@ const CasinoCard: React.FC<CasinoCardProps> = ({
           <div className="absolute rounded-[0.5rem] w-full top-0 left-0 h-full hover:backdrop-blur-[0.1875rem] duration-300 "></div>
         </div>
 
-        <div
-          className={`absolute top-2 left-2 text-white text-[10px] lg:text-[12.24px] font-bold lg:px-2 px-[2px] py-[0.5px] rounded-full border-t border-[#ffffff30] ${getBadgeColor(
-            badge
-          )}`}
-        >
-          {badge}
-        </div>
+        {badge && (
+          <div
+            className={`absolute top-2 left-2 text-white text-[10px] lg:text-[12.24px] font-bold lg:px-2 px-[2px] py-[0.5px] rounded-full border-t border-[#ffffff30] ${getBadgeColor(
+              badge
+            )}`}
+          >
+            {badge}
+          </div>
+        )}
       </div>
     </div>
   )

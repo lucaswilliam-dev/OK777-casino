@@ -692,7 +692,7 @@ const MainContent: React.FC = () => {
                   renderCard={(card, index) => (
                     <CasinoCard key={index} {...(card as any)} />
                   )}
-                  viewAllLink={`/?tab=${tabFromQuery}`}
+                  viewAllLink={`/casino/view-all?category=${encodeURIComponent(categoryName)}&categoryType=${encodeURIComponent(categoryName)}`}
                 />
               ) : (
                 <div className="flex justify-center items-center py-12">
@@ -751,7 +751,7 @@ const MainContent: React.FC = () => {
                 renderCard={(card, index) => (
                   <CasinoCard key={index} {...(card as any)} />
                 )}
-                viewAllLink="/live-casino"
+                viewAllLink="/casino/view-all?category=Live Casino&categoryType=Live Casino"
               />
             </div>
           )}

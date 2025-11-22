@@ -1,6 +1,6 @@
 // API Base Configuration
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ok777-render.onrender.com'
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000'
 
 // Common API Response Structure
 export interface ApiResponse<T = any> {
