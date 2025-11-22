@@ -94,7 +94,7 @@ export const HomepageSections: React.FC = () => {
   const { t } = useI18n()
 
   // Get static data from main-content-data.json
-  const { newGames, cryptoCards, hashGames } = useMainContent()
+  const { newGames, cryptoCards, hashGames } = useMainContent()  
 
   // Get dynamic categories and games from database
   const { categories } = useGameCategories()
