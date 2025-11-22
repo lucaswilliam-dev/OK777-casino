@@ -18,7 +18,7 @@ import SwiperSlider from '../../../components/ui/slider/SwiperSlider'
 import { Icon } from '@iconify/react'
 import { X } from 'lucide-react'
 import { apiGet } from '../../../lib/axios'
-import { API_ENDPOINTS } from '../../../types/api'
+import { API_ENDPOINTS, GameByCategoryResponse } from '../../../types/api'
 import {
   StatusDropdown,
   StatusDropdownTrigger,
@@ -563,38 +563,48 @@ export default function ViewAllGamesPage() {
     const fetchGames = async () => {
       setIsLoading(true)
       try {
+        // Use the same endpoint as sidebar category click for consistency
+        // This filters by extra_gameType field, matching the sidebar behavior
         const params = new URLSearchParams()
         params.append('page', '1')
         params.append('limit', '1000') // Fetch all games
         
-        if (searchValue) {
-          params.append('search', searchValue)
-        }
-        
         if (categoryType) {
-          params.append('category', categoryType)
+          // Use extraGameType parameter to match sidebar filtering (filters by extra_gameType field)
+          params.append('extraGameType', categoryType)
         }
 
-        const response = await apiGet<any>(
-          `/api/v1/operators/provided-games?${params.toString()}`
+        const response = await apiGet<GameByCategoryResponse>(
+          `${API_ENDPOINTS.GAMES_BY_CATEGORY}?${params.toString()}`
         )
 
-        // Handle API response structure: { data: { provider_games: [...] }, pagination: {...} }
+        // Handle API response structure: { code: 200, data: [...], meta: {...} }
         let gamesData: any[] = []
 
-        if (response.data && response.data.provider_games && Array.isArray(response.data.provider_games)) {
-          gamesData = response.data.provider_games
+        if (response.code === 200 && response.data && Array.isArray(response.data)) {
+          gamesData = response.data
         } else if (response.data && Array.isArray(response.data)) {
           gamesData = response.data
         } else if (Array.isArray(response)) {
           gamesData = response
         }
 
-        // Filter to only show games with inManager: true
-        const filteredGames = gamesData.filter((game: any) => game.inManager === true)
+        // Filter to only show games with inManager: true (if needed)
+        // Note: The by-category endpoint should already filter by inManager, but we keep this for safety
+        const filteredGames = gamesData.filter((game: any) => game.inManager !== false)
 
-        setGames(filteredGames)
-        setTotalGames(filteredGames.length)
+        // Apply client-side search filter if searchValue is provided
+        let finalGames = filteredGames
+        if (searchValue) {
+          const searchLower = searchValue.toLowerCase()
+          finalGames = filteredGames.filter((game: any) => {
+            const gameName = (game.gameName || game.extra_gameName || game.game_name || '').toLowerCase()
+            return gameName.includes(searchLower)
+          })
+        }
+
+        setGames(finalGames)
+        setTotalGames(finalGames.length)
       } catch (error) {
         console.error('Error fetching games:', error)
         setGames([])
@@ -617,14 +627,17 @@ export default function ViewAllGamesPage() {
   }
 
   // Transform games for display
+  // Note: Games from by-category endpoint use camelCase (gameName, imageUrl, gameCode)
+  // while provided-games endpoint uses snake_case (game_name, image_url, game_code)
   const transformedGames = useMemo(() => {
     return games.map((game) => ({
       badge: game.isHot ? 'Hot' : game.isNew ? 'New' : undefined,
       views: game.views?.toString() || undefined,
       user: game.user || undefined,
-      image: game.image_url || game.extra_imageUrl || game.imageUrl || '/images/placeholder-game.jpg',
-      title: game.game_name || game.extra_gameName || game.gameName || 'Game',
-      gameCode: game.game_code || game.gameCode,
+      // Handle both camelCase (from by-category) and snake_case (from provided-games)
+      image: game.imageUrl || game.extra_imageUrl || game.image_url || '/images/placeholder-game.jpg',
+      title: game.gameName || game.extra_gameName || game.game_name || 'Game',
+      gameCode: game.gameCode || game.game_code,
       provider: game.provider || game.extra_provider,
       link: game.link || `#`,
     }))
