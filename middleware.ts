@@ -45,10 +45,12 @@ function isPublicRoute(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   // Temporarily disabled to fix middleware error
+  // Simply return next response without any processing
   return NextResponse.next()
 }
 
 // Configure which paths the middleware should run on
+// Simplified matcher pattern compatible with Vercel Edge Runtime
 export const config = {
   matcher: [
     /*
@@ -57,8 +59,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder files
+     * - files with extensions (images, fonts, etc.)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.[^/]*$).*)',
   ],
 }
