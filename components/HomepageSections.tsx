@@ -6,9 +6,13 @@ import { useMainContent } from '../context/MainContentProvider'
 import { useGameCategories } from '../hooks/useGameCategories'
 import { apiGet } from '../lib/axios'
 import { API_ENDPOINTS, GameByCategoryResponse } from '../types/api'
+import { useAppSelector } from '../store/hooks'
 import CasinoCard from './ui/cards/CasinoCard'
 import HashCard from './ui/cards/HashCard'
 import FutureCard from './ui/cards/FutureCard'
+import CasinoCardSkeleton from './ui/cards/CasinoCardSkeleton'
+import HashCardSkeleton from './ui/cards/HashCardSkeleton'
+import FutureCardSkeleton from './ui/cards/FutureCardSkeleton'
 import SwiperSlider from './ui/slider/SwiperSlider'
 
 // Section header component
@@ -94,7 +98,7 @@ export const HomepageSections: React.FC = () => {
   const { t } = useI18n()
 
   // Get static data from main-content-data.json
-  const { newGames, cryptoCards, hashGames } = useMainContent()  
+  const { newGames, cryptoCards, hashGames, isLoading: isLoadingMainContent } = useMainContent()  
 
   // Get dynamic categories and games from database
   const { categories } = useGameCategories()
@@ -102,6 +106,20 @@ export const HomepageSections: React.FC = () => {
     Record<string, any[]>
   >({})
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Get selected language from Redux store
+  const selectedLanguage = useAppSelector(state => state.userSettings.selectedLanguage)
+  
+  // Parse language code from stored language
+  const getLanguageCode = (): number | null => {
+    if (!selectedLanguage) return null
+    try {
+      const parsed = JSON.parse(selectedLanguage)
+      return parsed.languageCode !== undefined ? parsed.languageCode : null
+    } catch {
+      return null
+    }
+  }
 
   // Fetch games for all categories
   useEffect(() => {
@@ -113,13 +131,27 @@ export const HomepageSections: React.FC = () => {
 
       setIsLoading(true)
       const gamesMap: Record<string, any[]> = {}
+      
+      // Get language code for visibility filtering
+      const languageCode = getLanguageCode()
 
       try {
         // Fetch games for each category in parallel
         const fetchPromises = categories.map(async category => {
           try {
+            // Build query parameters with visibility
+            const params = new URLSearchParams()
+            params.append('extraGameType', category.name)
+            params.append('page', '1')
+            params.append('limit', '20')
+            if (languageCode !== null && languageCode !== undefined) {
+              params.append('visibility', languageCode.toString())
+            } else {
+              params.append('visibility', 'null') // Explicitly send null for English (all games)
+            }
+            
             const response = await apiGet<GameByCategoryResponse>(
-              `${API_ENDPOINTS.GAMES_BY_CATEGORY}?extraGameType=${encodeURIComponent(category.name)}&page=1&limit=20`
+              `${API_ENDPOINTS.GAMES_BY_CATEGORY}?${params.toString()}`
             )
             if (response.code === 200 && response.data) {
               return { categoryName: category.name, games: response.data }
@@ -147,7 +179,7 @@ export const HomepageSections: React.FC = () => {
     }
 
     fetchAllCategoryGames()
-  }, [categories])
+  }, [categories, selectedLanguage]) // Refetch when language changes
 
   // Transform API games to match the format expected by cards
   const transformGamesForDisplay = (games: any[]) => {
@@ -181,10 +213,7 @@ export const HomepageSections: React.FC = () => {
     }))
   }
 
-  // Helper function to duplicate data for two rows
-  const duplicateDataForTwoRows = (data: any[]) => {
-    return [...data, ...data]
-  }
+  // Note: No need to duplicate data for two rows - Swiper's grid layout handles this automatically
 
   // Get icon for category (matches category-mapper logic)
   const getCategoryIcon = (category: any) => {
@@ -228,13 +257,12 @@ export const HomepageSections: React.FC = () => {
     )
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="text-white">Loading games...</div>
-      </div>
-    )
+  // Generate skeleton data for loading states
+  const generateSkeletonData = (count: number) => {
+    return Array.from({ length: count }, (_, i) => ({ id: i }))
   }
+
+  const skeletonCount = 7 // Number of skeleton cards to show
 
   // Filter out categories that match static sections and remove duplicates
   const normalizeCategoryName = (name: string) => {
@@ -276,23 +304,36 @@ export const HomepageSections: React.FC = () => {
           icon="/icons/Home.svg"
           title={t('games.new')}
           alt="lobby"
-          count={newGames.length}
+          count={isLoadingMainContent ? 0 : newGames.length}
         />
-        <SwiperSlider
-          key="homepage-new-launches-swiper"
-          autoplay={false}
-          data={newGames.map((game: any) => ({
-            badge: game.badge || 'NEW',
-            views: game.views,
-            user: game.user,
-            image: game.image || '/images/placeholder-game.jpg',
-          }))}
-          renderSlide={(card, index) => <CasinoCard key={index} {...card} />}
-          slidesPerView={7}
-          spaceBetween={8}
-          breakpoints={GameBreakpoints}
-          showProgressBars={true}
-        />
+        {isLoadingMainContent ? (
+          <SwiperSlider
+            key="homepage-new-launches-swiper-skeleton"
+            autoplay={false}
+            data={generateSkeletonData(skeletonCount)}
+            renderSlide={(_, index) => <CasinoCardSkeleton key={index} />}
+            slidesPerView={7}
+            spaceBetween={8}
+            breakpoints={GameBreakpoints}
+            showProgressBars={false}
+          />
+        ) : (
+          <SwiperSlider
+            key="homepage-new-launches-swiper"
+            autoplay={false}
+            data={newGames.map((game: any) => ({
+              badge: game.badge || 'NEW',
+              views: game.views,
+              user: game.user,
+              image: game.image || '/images/placeholder-game.jpg',
+            }))}
+            renderSlide={(card, index) => <CasinoCard key={index} {...card} />}
+            slidesPerView={7}
+            spaceBetween={8}
+            breakpoints={GameBreakpoints}
+            showProgressBars={true}
+          />
+        )}
       </div>
 
       {/* Cryptogra Section - from main-content-data.json */}
@@ -352,57 +393,100 @@ export const HomepageSections: React.FC = () => {
       </div>
 
       {/* Dynamic Category Sections - from database */}
-      {dynamicCategories.map(category => {
-        const games = categoryGamesMap[category.name] || []
-        const transformedGames = transformGamesForDisplay(games)
-        const cardType = getCardType(category.name)
-        const useTwoRows = shouldUseTwoRows(category.name)
-        const icon = getCategoryIcon(category)
+      {isLoading ? (
+        // Show skeleton sections while loading categories
+        dynamicCategories.map(category => {
+          const cardType = getCardType(category.name)
+          const useTwoRows = shouldUseTwoRows(category.name)
+          const icon = getCategoryIcon(category)
 
-        if (games.length === 0) return null
-
-        return (
-          <div key={category.id} className="lg:mb-16 mb-8">
-            <SectionHeader
-              icon={icon}
-              title={category.name}
-              alt={category.name}
-              count={games.length}
-            />
-            <SwiperSlider
-              key={`homepage-${category.id}-swiper`}
-              data={
-                useTwoRows
-                  ? duplicateDataForTwoRows(transformedGames)
-                  : transformedGames
-              }
-              renderSlide={(card, index) => {
-                if (cardType === 'hash') {
-                  return <HashCard key={index} {...(card as any)} />
-                } else if (cardType === 'future') {
-                  return <FutureCard key={index} {...(card as any)} />
-                } else {
-                  return <CasinoCard key={index} {...(card as any)} />
+          return (
+            <div key={category.id} className="lg:mb-16 mb-8">
+              <SectionHeader
+                icon={icon}
+                title={category.name}
+                alt={category.name}
+                count={0}
+              />
+              <SwiperSlider
+                key={`homepage-${category.id}-swiper-skeleton`}
+                data={generateSkeletonData(skeletonCount)}
+                renderSlide={(_, index) => {
+                  if (cardType === 'hash') {
+                    return <HashCardSkeleton key={index} />
+                  } else if (cardType === 'future') {
+                    return <FutureCardSkeleton key={index} />
+                  } else {
+                    return <CasinoCardSkeleton key={index} />
+                  }
+                }}
+                slidesPerView={7}
+                spaceBetween={8}
+                grid={useTwoRows ? { rows: 2, fill: 'row' } : undefined}
+                breakpoints={
+                  cardType === 'hash'
+                    ? HashBreakpoints
+                    : cardType === 'future'
+                      ? FutureBreakpoints
+                      : useTwoRows
+                        ? GameBreakpointsTwoRows
+                        : GameBreakpoints
                 }
-              }}
-              slidesPerView={7}
-              spaceBetween={8}
-              grid={useTwoRows ? { rows: 2, fill: 'row' } : undefined}
-              breakpoints={
-                cardType === 'hash'
-                  ? HashBreakpoints
-                  : cardType === 'future'
-                    ? FutureBreakpoints
-                    : useTwoRows
-                      ? GameBreakpointsTwoRows
-                      : GameBreakpoints
-              }
-              showProgressBars={true}
-              autoplay={false}
-            />
-          </div>
-        )
-      })}
+                showProgressBars={false}
+                autoplay={false}
+              />
+            </div>
+          )
+        })
+      ) : (
+        dynamicCategories.map(category => {
+          const games = categoryGamesMap[category.name] || []
+          const transformedGames = transformGamesForDisplay(games)
+          const cardType = getCardType(category.name)
+          const useTwoRows = shouldUseTwoRows(category.name)
+          const icon = getCategoryIcon(category)
+
+          if (games.length === 0) return null
+
+          return (
+            <div key={category.id} className="lg:mb-16 mb-8">
+              <SectionHeader
+                icon={icon}
+                title={category.name}
+                alt={category.name}
+                count={games.length}
+              />
+              <SwiperSlider
+                key={`homepage-${category.id}-swiper`}
+                data={transformedGames}
+                renderSlide={(card, index) => {
+                  if (cardType === 'hash') {
+                    return <HashCard key={index} {...(card as any)} />
+                  } else if (cardType === 'future') {
+                    return <FutureCard key={index} {...(card as any)} />
+                  } else {
+                    return <CasinoCard key={index} {...(card as any)} />
+                  }
+                }}
+                slidesPerView={7}
+                spaceBetween={8}
+                grid={useTwoRows ? { rows: 2, fill: 'row' } : undefined}
+                breakpoints={
+                  cardType === 'hash'
+                    ? HashBreakpoints
+                    : cardType === 'future'
+                      ? FutureBreakpoints
+                      : useTwoRows
+                        ? GameBreakpointsTwoRows
+                        : GameBreakpoints
+                }
+                showProgressBars={true}
+                autoplay={false}
+              />
+            </div>
+          )
+        })
+      )}
     </>
   )
 }

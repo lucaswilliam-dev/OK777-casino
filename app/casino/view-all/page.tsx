@@ -12,6 +12,7 @@ import {
   setGameManufacturersSlide,
 } from '../../../store/slices/carouselSlice'
 import CasinoCard from '../../../components/ui/cards/CasinoCard'
+import CasinoCardSkeleton from '../../../components/ui/cards/CasinoCardSkeleton'
 import GameCard from '../../../components/ui/cards/GameCard'
 import EarningCard from '../../../components/ui/cards/EarningCard'
 import SwiperSlider from '../../../components/ui/slider/SwiperSlider'
@@ -46,10 +47,7 @@ const GameGrid: React.FC<{
     return (
       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 pb-4">
         {[...Array(24)].map((_, i) => (
-          <div
-            key={i}
-            className="aspect-[3/4] bg-[rgba(255,255,255,0.04)] rounded-lg animate-pulse"
-          />
+          <CasinoCardSkeleton key={i} />
         ))}
       </div>
     )
@@ -446,6 +444,20 @@ export default function ViewAllGamesPage() {
   const carouselState = useAppSelector(state => state.carousel)
   const { bountyGames: apiBountyGames } = useMainContent()
   
+  // Get selected language from Redux store
+  const selectedLanguage = useAppSelector(state => state.userSettings.selectedLanguage)
+  
+  // Parse language code from stored language
+  const getLanguageCode = (): number | null => {
+    if (!selectedLanguage) return null
+    try {
+      const parsed = JSON.parse(selectedLanguage)
+      return parsed.languageCode !== undefined ? parsed.languageCode : null
+    } catch {
+      return null
+    }
+  }
+  
   // Static data for latest earnings (app.latestEarining)
   const staticBountyGames = [
     {
@@ -553,6 +565,7 @@ export default function ViewAllGamesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchValue, setSearchValue] = useState('')
   const [totalGames, setTotalGames] = useState(0)
+  const isMountedRef = useRef(true)
 
   // Get category from URL params (optional)
   const category = searchParams.get('category') || 'Live Casino'
@@ -560,8 +573,15 @@ export default function ViewAllGamesPage() {
 
   // Fetch all games (no pagination)
   useEffect(() => {
+    isMountedRef.current = true
+    
     const fetchGames = async () => {
       setIsLoading(true)
+      
+      // Track the current values for this request
+      const currentCategoryType = categoryType
+      const currentSearchValue = searchValue
+      
       try {
         // Use the same endpoint as sidebar category click for consistency
         // This filters by extra_gameType field, matching the sidebar behavior
@@ -569,14 +589,34 @@ export default function ViewAllGamesPage() {
         params.append('page', '1')
         params.append('limit', '1000') // Fetch all games
         
-        if (categoryType) {
+        if (currentCategoryType) {
           // Use extraGameType parameter to match sidebar filtering (filters by extra_gameType field)
-          params.append('extraGameType', categoryType)
+          params.append('extraGameType', currentCategoryType)
+        }
+        
+        // Get language code for visibility filtering
+        const languageCode = getLanguageCode()
+        if (languageCode !== null && languageCode !== undefined) {
+          params.append('visibility', languageCode.toString())
+        } else {
+          params.append('visibility', 'null') // Explicitly send null for English (all games)
         }
 
-        const response = await apiGet<GameByCategoryResponse>(
+        // Create a minimum 2-second delay promise
+        const minDelayPromise = new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Fetch games from API
+        const apiPromise = apiGet<GameByCategoryResponse>(
           `${API_ENDPOINTS.GAMES_BY_CATEGORY}?${params.toString()}`
         )
+        
+        // Wait for both the API call and the minimum delay
+        const [response] = await Promise.all([apiPromise, minDelayPromise])
+        
+        // Check if category or search changed during fetch, or component unmounted
+        if (!isMountedRef.current || currentCategoryType !== categoryType || currentSearchValue !== searchValue) {
+          return
+        }
 
         // Handle API response structure: { code: 200, data: [...], meta: {...} }
         let gamesData: any[] = []
@@ -595,22 +635,33 @@ export default function ViewAllGamesPage() {
 
         // Apply client-side search filter if searchValue is provided
         let finalGames = filteredGames
-        if (searchValue) {
-          const searchLower = searchValue.toLowerCase()
+        if (currentSearchValue) {
+          const searchLower = currentSearchValue.toLowerCase()
           finalGames = filteredGames.filter((game: any) => {
             const gameName = (game.gameName || game.extra_gameName || game.game_name || '').toLowerCase()
             return gameName.includes(searchLower)
           })
         }
 
-        setGames(finalGames)
-        setTotalGames(finalGames.length)
+        // Double-check request is still valid before updating state
+        if (isMountedRef.current && currentCategoryType === categoryType && currentSearchValue === searchValue) {
+          setGames(finalGames)
+          setTotalGames(finalGames.length)
+        }
       } catch (error) {
+        // Don't update state if request is no longer valid
+        if (!isMountedRef.current || currentCategoryType !== categoryType || currentSearchValue !== searchValue) {
+          return
+        }
+        
         console.error('Error fetching games:', error)
         setGames([])
         setTotalGames(0)
       } finally {
-        setIsLoading(false)
+        // Only update loading state if this is still the current request
+        if (isMountedRef.current && currentCategoryType === categoryType && currentSearchValue === searchValue) {
+          setIsLoading(false)
+        }
       }
     }
 
@@ -619,8 +670,11 @@ export default function ViewAllGamesPage() {
       fetchGames()
     }, searchValue ? 500 : 0)
 
-    return () => clearTimeout(timeoutId)
-  }, [searchValue, categoryType])
+    return () => {
+      clearTimeout(timeoutId)
+      isMountedRef.current = false
+    }
+  }, [searchValue, categoryType, selectedLanguage]) // Refetch when language changes
 
   const handleLatestEarningsSlideChange = (swiper: SwiperType) => {
     dispatch(setLatestEarningsSlide(swiper.realIndex ?? swiper.activeIndex))

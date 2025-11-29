@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import mainContentData from '../main-content-data.json'
 import { apiGet } from '../lib/axios'
 import { API_ENDPOINTS, ApiResponse } from '../types/api'
+import { useAppSelector } from '../store/hooks'
 
 // Define types for dynamic data
 interface DynamicMainContentData {
@@ -109,6 +110,20 @@ export function MainContentProvider({
   const [dynamicData, setDynamicData] = useState<DynamicMainContentData>(defaultDynamicData)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Get selected language from Redux store
+  const selectedLanguage = useAppSelector(state => state.userSettings.selectedLanguage)
+  
+  // Parse language code from stored language
+  const getLanguageCode = (): number | null => {
+    if (!selectedLanguage) return null
+    try {
+      const parsed = JSON.parse(selectedLanguage)
+      return parsed.languageCode !== undefined ? parsed.languageCode : null
+    } catch {
+      return null
+    }
+  }
 
   useEffect(() => {
     const fetchDynamicData = async () => {
@@ -132,10 +147,23 @@ export function MainContentProvider({
           // Continue with default data - don't block the rest
         }
         
+        // Get language code for visibility filtering
+        const languageCode = getLanguageCode()
+        
+        // Build query parameters
+        const params = new URLSearchParams()
+        params.append('page', '1')
+        params.append('limit', '1000')
+        if (languageCode !== null && languageCode !== undefined) {
+          params.append('visibility', languageCode.toString())
+        } else {
+          params.append('visibility', 'null') // Explicitly send null for English (all games)
+        }
+        
         // Fetch new games from database (where isNew is true and inManager is true)
         try {
           const newGamesResponse = await apiGet<any>(
-            `/api/v1/operators/provided-games?page=1&limit=1000`
+            `/api/v1/operators/provided-games?${params.toString()}`
           )
           
           console.log('[MainContentProvider] New games API response structure:', {
@@ -175,33 +203,84 @@ export function MainContentProvider({
              console.log('[MainContentProvider] Games with inManager:', gamesWithInManager.length)
           }
           
+          // Helper function to check inManager
+          const checkInManager = (game: any) => {
+            return game.inManager === true || game.inManager === 'true' || game.inManager === 1 || game.inManager === '1'
+          }
+          
+          // Helper function to transform game to display format
+          const transformGame = (game: any, badge?: string) => ({
+            badge: badge || (game.isHot ? 'Hot' : game.isNew ? 'New' : undefined),
+            views: game.views?.toString() || undefined,
+            user: game.user || undefined,
+            image: game.image_url || game.extra_imageUrl || game.imageUrl || '/images/placeholder-game.jpg',
+            title: game.game_name || game.extra_gameName || game.gameName || 'Game',
+            gameCode: game.game_code || game.gameCode,
+            provider: game.provider || game.extra_provider,
+            link: game.link || `#`,
+          })
+          
           // Filter games where isNew is true and inManager is true
           const filteredNewGames = newGamesData
             .filter((game: any) => {
-              // Check isNew - handle boolean, string, and number formats
               const isNew = game.isNew === true || game.isNew === 'true' || game.isNew === 1 || game.isNew === '1'
-              // Check inManager - handle boolean, string, and number formats  
-              const inManager = game.inManager === true || game.inManager === 'true' || game.inManager === 1 || game.inManager === '1'
-              
-              return isNew && inManager
+              return isNew && checkInManager(game)
             })
-            .map((game: any) => ({
-              badge: 'New',
-              views: game.views?.toString() || undefined,
-              user: game.user || undefined,
-              image: game.image_url || game.extra_imageUrl || game.imageUrl || '/images/placeholder-game.jpg',
-              title: game.game_name || game.extra_gameName || game.gameName || 'Game',
-              gameCode: game.game_code || game.gameCode,
-              provider: game.provider || game.extra_provider,
-              link: game.link || `#`,
-            }))
+            .map((game: any) => transformGame(game, 'New'))
           
-          console.log('[MainContentProvider] Filtered new games count:', filteredNewGames.length)
-          if (filteredNewGames.length > 0) {
-            console.log('[MainContentProvider] First filtered game:', filteredNewGames[0])
-          }
+          // Filter games where isHot is true and inManager is true
+          const filteredHotGames = newGamesData
+            .filter((game: any) => {
+              const isHot = game.isHot === true || game.isHot === 'true' || game.isHot === 1 || game.isHot === '1'
+              return isHot && checkInManager(game)
+            })
+            .map((game: any) => transformGame(game, 'Hot'))
+          
+          // Filter games where isRecommended is true and inManager is true (for trending)
+          const filteredTrendingGames = newGamesData
+            .filter((game: any) => {
+              const isRecommended = game.isRecommended === true || game.isRecommended === 'true' || game.isRecommended === 1 || game.isRecommended === '1'
+              return isRecommended && checkInManager(game)
+            })
+            .map((game: any) => transformGame(game))
+          
+          // Filter games by extra_gameType for specific categories
+          const filteredAviationGames = newGamesData
+            .filter((game: any) => {
+              const gameType = (game.extra_gameType || game.gameType || '').toLowerCase()
+              return (gameType.includes('aviation') || gameType.includes('futures')) && checkInManager(game)
+            })
+            .map((game: any) => transformGame(game))
+          
+          const filteredSportsGames = newGamesData
+            .filter((game: any) => {
+              const gameType = (game.extra_gameType || game.gameType || '').toLowerCase()
+              return (gameType.includes('sport') || gameType.includes('sports')) && checkInManager(game)
+            })
+            .map((game: any) => transformGame(game))
+          
+          const filteredAnimalGames = newGamesData
+            .filter((game: any) => {
+              const gameType = (game.extra_gameType || game.gameType || '').toLowerCase()
+              return (gameType.includes('table') || gameType.includes('animal')) && checkInManager(game)
+            })
+            .map((game: any) => transformGame(game))
+          
+          console.log('[MainContentProvider] Filtered games count:', {
+            newGames: filteredNewGames.length,
+            hotGames: filteredHotGames.length,
+            trendingGames: filteredTrendingGames.length,
+            aviationGames: filteredAviationGames.length,
+            sportsGames: filteredSportsGames.length,
+            animalGames: filteredAnimalGames.length,
+          })
           
           mainContentData.newGames = filteredNewGames
+          mainContentData.hotGames = filteredHotGames
+          mainContentData.trendingGames = filteredTrendingGames
+          mainContentData.aviationGames = filteredAviationGames
+          mainContentData.sportsGames = filteredSportsGames
+          mainContentData.animalGames = filteredAnimalGames
         } catch (newGamesError) {
           console.error('[MainContentProvider] Error fetching new games:', newGamesError)
           // Continue with other data even if new games fetch fails
@@ -219,7 +298,7 @@ export function MainContentProvider({
     }
 
     fetchDynamicData()
-  }, [])
+  }, [selectedLanguage]) // Refetch when language changes
 
   const value: MainContentContextType = {
     // Static data from JSON

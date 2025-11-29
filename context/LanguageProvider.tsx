@@ -9,6 +9,7 @@ import { setSelectedLanguage } from '@/store/slices/userSettingsSlice'
 interface Language {
   code: string
   name: string
+  languageCode?: number | null // Numeric code for backend (null for English = all games)
 }
 
 interface LanguageContextType {
@@ -72,6 +73,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
   const [currentLanguage, setCurrentLanguage] = useState<Language>({
     code: localeToLanguageMap[locale] || 'en',
     name: 'English',
+    languageCode: null, // Default to English (show all games)
   })
 
   // Load language from Redux store on mount
@@ -86,6 +88,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({
       } catch (error) {
         console.error('Failed to parse saved language:', error)
       }
+
     }
   }, [selectedLanguage, setLocale])
 

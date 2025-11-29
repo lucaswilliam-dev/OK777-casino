@@ -5,17 +5,18 @@ export interface Language {
   code: string
   name: string
   flag: string
+  languageCode: number | null // Numeric code for backend (null for English = all games)
 }
 
 export const languages: Language[] = [
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'pl', name: 'Polish', flag: '🇵🇱' },
-  { code: 'pt', name: 'Português', flag: '🇵🇹' },
-  { code: 'ua', name: 'Ukraine', flag: '🇺🇦' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'br', name: 'Português (BR)', flag: '🇧🇷' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'en', name: 'English', flag: '🇺🇸', languageCode: null }, // null = show all games
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪', languageCode: 8 },
+  { code: 'pl', name: 'Polish', flag: '🇵🇱', languageCode: 19 },
+  { code: 'pt', name: 'Português', flag: '🇵🇹', languageCode: 12 },
+  { code: 'ua', name: 'Ukraine', flag: '🇺🇦', languageCode: 31 },
+  { code: 'es', name: 'Español', flag: '🇪🇸', languageCode: 9 },
+  { code: 'zh', name: '简体中文', flag: '🇨🇳', languageCode: 2 },
+  { code: 'fr', name: 'Français', flag: '🇫🇷', languageCode: 10 },
 ]
 
 interface LanguageSelectProps {
@@ -40,8 +41,8 @@ export default function LanguageDropdown({
   const isOpen = isControlled ? (open as boolean) : isOpenState
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    value || languages[6]
-  ) // Default to Chinese
+    value || languages[0]
+  ) // Default to English
   const [scrollTop, setScrollTop] = useState(0)
   const [scrollHeight, setScrollHeight] = useState(0)
   const [clientHeight, setClientHeight] = useState(0)
@@ -146,6 +147,47 @@ export default function LanguageDropdown({
 
   const FlagComponent = ({ code, name }: { code: string; name: string }) => {
     switch (code) {
+      case 'en':
+        return (
+          <svg
+            width="24"
+            height="18"
+            viewBox="0 0 24 18"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <g clipPath="url(#clip0_en)">
+              <path d="M0 0H24V18H0V0Z" fill="#012169" />
+              <path
+                d="M0 0L24 18M24 0L0 18"
+                stroke="white"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
+              <path
+                d="M0 0L24 18M24 0L0 18"
+                stroke="#C8102E"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+              <path
+                d="M12 0V18M0 9H24"
+                stroke="white"
+                strokeWidth="3.2"
+              />
+              <path
+                d="M12 0V18M0 9H24"
+                stroke="#C8102E"
+                strokeWidth="2"
+              />
+            </g>
+            <defs>
+              <clipPath id="clip0_en">
+                <rect width="24" height="18" rx="4" fill="white" />
+              </clipPath>
+            </defs>
+          </svg>
+        )
       case 'de':
         return (
           <svg
@@ -414,7 +456,7 @@ export default function LanguageDropdown({
                       setSearchQuery('')
                     }}
                     className={`flex items-center gap-4 w-full h-12 px-3 rounded-lg transition-colors mb-1 ${
-                      lang.code === 'zh'
+                      lang.code === selectedLanguage.code
                         ? 'bg-white/[0.04]'
                         : 'hover:bg-white/[0.04]'
                     }`}
@@ -422,7 +464,7 @@ export default function LanguageDropdown({
                     <FlagComponent code={lang.code} name={lang.name} />
                     <span
                       className={`font-montserrat text-sm font-bold truncate ${
-                        lang.code === 'zh' ? 'text-[#93ACD3]' : 'text-[#55657E]'
+                        lang.code === selectedLanguage.code ? 'text-[#93ACD3]' : 'text-[#55657E]'
                       }`}
                     >
                       {lang.name}

@@ -66,6 +66,7 @@ export const UtilitySection: React.FC<HeaderUtilitySectionProps> = ({
                 setCurrentLanguage({
                   code: lang.code,
                   name: lang.name,
+                  languageCode: lang.languageCode,
                 })
               }
             />

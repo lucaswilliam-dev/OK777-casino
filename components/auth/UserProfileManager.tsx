@@ -1,7 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { User, Mail, Phone, MapPin, Calendar, Pin, Shield, Eye, EyeOff, Camera, Upload, Save, Edit3, Settings, CheckCircle } from 'lucide-react'
+import {
+  User,
+  Mail,
+  Phone,
+  Shield,
+  Camera,
+  Edit3,
+  Settings,
+  CheckCircle,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface UserProfile {
@@ -59,9 +68,11 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
   onUpdate,
   onSave,
   isLoading = false,
-  readOnly = false
+  readOnly = false,
 }) => {
-  const [activeTab, setActiveTab] = useState<'basic' | 'preferences' | 'security' | 'verification'>('basic')
+  const [activeTab, setActiveTab] = useState<
+    'basic' | 'preferences' | 'security' | 'verification'
+  >('basic')
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<UserProfile>(profile)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -73,18 +84,22 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
   const handleInputChange = (field: string, value: any) => {
     setEditedProfile(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
     setErrors(prev => ({ ...prev, [field]: '' }))
   }
 
-  const handleNestedInputChange = (section: string, field: string, value: any) => {
+  const handleNestedInputChange = (
+    section: string,
+    field: string,
+    value: any
+  ) => {
     setEditedProfile(prev => ({
       ...prev,
       [section]: {
         ...(prev[section as keyof UserProfile] as any),
-        [field]: value
-      }
+        [field]: value,
+      },
     }))
     setErrors(prev => ({ ...prev, [`${section}.${field}`]: '' }))
   }
@@ -106,7 +121,10 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
       newErrors.email = 'Please enter a valid email address'
     }
 
-    if (editedProfile.phone && !/^\+?[\d\s\-\(\)]+$/.test(editedProfile.phone)) {
+    if (
+      editedProfile.phone &&
+      !/^\+?[\d\s\-\(\)]+$/.test(editedProfile.phone)
+    ) {
       newErrors.phone = 'Please enter a valid phone number'
     }
 
@@ -132,7 +150,7 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
     if (file) {
       // Create a preview URL for the uploaded image
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = e => {
         handleInputChange('avatar', e.target?.result as string)
       }
       reader.readAsDataURL(file)
@@ -146,9 +164,9 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
         <div className="relative">
           <div className="w-24 h-24 rounded-full overflow-hidden bg-white-2 border-2 border-white-4">
             {editedProfile.avatar ? (
-              <img 
-                src={editedProfile.avatar} 
-                alt="Profile" 
+              <img
+                src={editedProfile.avatar}
+                alt="Profile"
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -175,13 +193,17 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
           </h3>
           <p className="text-casper">{editedProfile.email}</p>
           <div className="flex items-center space-x-4 mt-2">
-            <span className={cn(
-              "text-xs px-2 py-1 rounded-full",
-              editedProfile.verification.emailVerified 
-                ? "bg-green-500/10 text-green-500" 
-                : "bg-red-500/10 text-red-500"
-            )}>
-              {editedProfile.verification.emailVerified ? 'Email Verified' : 'Email Unverified'}
+            <span
+              className={cn(
+                'text-xs px-2 py-1 rounded-full',
+                editedProfile.verification.emailVerified
+                  ? 'bg-green-500/10 text-green-500'
+                  : 'bg-red-500/10 text-red-500'
+              )}
+            >
+              {editedProfile.verification.emailVerified
+                ? 'Email Verified'
+                : 'Email Unverified'}
             </span>
             {editedProfile.verification.phoneVerified && (
               <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-500">
@@ -195,95 +217,123 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
       {/* Personal Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-casper mb-2">First Name</label>
+          <label className="block text-sm font-medium text-casper mb-2">
+            First Name
+          </label>
           <input
             type="text"
             value={editedProfile.firstName}
-            onChange={(e) => handleInputChange('firstName', e.target.value)}
+            onChange={e => handleInputChange('firstName', e.target.value)}
             disabled={!isEditing || readOnly}
             className={cn(
-              "w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none",
-              errors.firstName ? "border-red-500" : "border-white-4 focus:border-blue-500",
-              (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+              'w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none',
+              errors.firstName
+                ? 'border-red-500'
+                : 'border-white-4 focus:border-blue-500',
+              (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
             )}
           />
-          {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+          {errors.firstName && (
+            <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-casper mb-2">Last Name</label>
+          <label className="block text-sm font-medium text-casper mb-2">
+            Last Name
+          </label>
           <input
             type="text"
             value={editedProfile.lastName}
-            onChange={(e) => handleInputChange('lastName', e.target.value)}
+            onChange={e => handleInputChange('lastName', e.target.value)}
             disabled={!isEditing || readOnly}
             className={cn(
-              "w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none",
-              errors.lastName ? "border-red-500" : "border-white-4 focus:border-blue-500",
-              (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+              'w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none',
+              errors.lastName
+                ? 'border-red-500'
+                : 'border-white-4 focus:border-blue-500',
+              (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
             )}
           />
-          {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+          {errors.lastName && (
+            <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-casper mb-2">Email</label>
+          <label className="block text-sm font-medium text-casper mb-2">
+            Email
+          </label>
           <input
             type="email"
             value={editedProfile.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
+            onChange={e => handleInputChange('email', e.target.value)}
             disabled={!isEditing || readOnly}
             className={cn(
-              "w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none",
-              errors.email ? "border-red-500" : "border-white-4 focus:border-blue-500",
-              (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+              'w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none',
+              errors.email
+                ? 'border-red-500'
+                : 'border-white-4 focus:border-blue-500',
+              (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
             )}
           />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-casper mb-2">Phone</label>
+          <label className="block text-sm font-medium text-casper mb-2">
+            Phone
+          </label>
           <input
             type="tel"
             value={editedProfile.phone || ''}
-            onChange={(e) => handleInputChange('phone', e.target.value)}
+            onChange={e => handleInputChange('phone', e.target.value)}
             disabled={!isEditing || readOnly}
             className={cn(
-              "w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none",
-              errors.phone ? "border-red-500" : "border-white-4 focus:border-blue-500",
-              (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+              'w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none',
+              errors.phone
+                ? 'border-red-500'
+                : 'border-white-4 focus:border-blue-500',
+              (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
             )}
             placeholder="+1 (555) 123-4567"
           />
-          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+          {errors.phone && (
+            <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+          )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-casper mb-2">Date of Birth</label>
+          <label className="block text-sm font-medium text-casper mb-2">
+            Date of Birth
+          </label>
           <input
             type="date"
             value={editedProfile.dateOfBirth || ''}
-            onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+            onChange={e => handleInputChange('dateOfBirth', e.target.value)}
             disabled={!isEditing || readOnly}
             className={cn(
-              "w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none",
-              "border-white-4 focus:border-blue-500",
-              (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+              'w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none',
+              'border-white-4 focus:border-blue-500',
+              (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
             )}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-casper mb-2">Country</label>
+          <label className="block text-sm font-medium text-casper mb-2">
+            Country
+          </label>
           <select
             value={editedProfile.country}
-            onChange={(e) => handleInputChange('country', e.target.value)}
+            onChange={e => handleInputChange('country', e.target.value)}
             disabled={!isEditing || readOnly}
             className={cn(
-              "w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none",
-              "border-white-4 focus:border-blue-500",
-              (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+              'w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none',
+              'border-white-4 focus:border-blue-500',
+              (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
             )}
           >
             <option value="">Select Country</option>
@@ -303,16 +353,18 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
 
       {/* Bio */}
       <div>
-        <label className="block text-sm font-medium text-casper mb-2">Bio</label>
+        <label className="block text-sm font-medium text-casper mb-2">
+          Bio
+        </label>
         <textarea
           value={editedProfile.bio || ''}
-          onChange={(e) => handleInputChange('bio', e.target.value)}
+          onChange={e => handleInputChange('bio', e.target.value)}
           disabled={!isEditing || readOnly}
           rows={3}
           className={cn(
-            "w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none resize-none",
-            "border-white-4 focus:border-blue-500",
-            (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+            'w-full p-3 rounded-lg border bg-white-2 text-gallery placeholder-casper focus:outline-none resize-none',
+            'border-white-4 focus:border-blue-500',
+            (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
           )}
           placeholder="Tell us about yourself..."
         />
@@ -323,15 +375,19 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
   const renderPreferences = () => (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-casper mb-2">Language</label>
+        <label className="block text-sm font-medium text-casper mb-2">
+          Language
+        </label>
         <select
           value={editedProfile.preferences.language}
-          onChange={(e) => handleNestedInputChange('preferences', 'language', e.target.value)}
+          onChange={e =>
+            handleNestedInputChange('preferences', 'language', e.target.value)
+          }
           disabled={!isEditing || readOnly}
           className={cn(
-            "w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none",
-            "border-white-4 focus:border-blue-500",
-            (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+            'w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none',
+            'border-white-4 focus:border-blue-500',
+            (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
           )}
         >
           <option value="en">English</option>
@@ -345,15 +401,19 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-casper mb-2">Timezone</label>
+        <label className="block text-sm font-medium text-casper mb-2">
+          Timezone
+        </label>
         <select
           value={editedProfile.preferences.timezone}
-          onChange={(e) => handleNestedInputChange('preferences', 'timezone', e.target.value)}
+          onChange={e =>
+            handleNestedInputChange('preferences', 'timezone', e.target.value)
+          }
           disabled={!isEditing || readOnly}
           className={cn(
-            "w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none",
-            "border-white-4 focus:border-blue-500",
-            (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+            'w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none',
+            'border-white-4 focus:border-blue-500',
+            (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
           )}
         >
           <option value="UTC-12">UTC-12:00</option>
@@ -368,16 +428,20 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
 
       {/* Notifications */}
       <div>
-        <h4 className="text-gallery font-medium mb-3">Notification Preferences</h4>
+        <h4 className="text-gallery font-medium mb-3">
+          Notification Preferences
+        </h4>
         <div className="space-y-3">
           <label className="flex items-center space-x-3">
             <input
               type="checkbox"
               checked={editedProfile.preferences.notifications.email}
-              onChange={(e) => handleNestedInputChange('preferences', 'notifications', {
-                ...editedProfile.preferences.notifications,
-                email: e.target.checked
-              })}
+              onChange={e =>
+                handleNestedInputChange('preferences', 'notifications', {
+                  ...editedProfile.preferences.notifications,
+                  email: e.target.checked,
+                })
+              }
               disabled={!isEditing || readOnly}
               className="w-4 h-4 text-blue-500 border-white-4 rounded focus:ring-blue-500"
             />
@@ -388,10 +452,12 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
             <input
               type="checkbox"
               checked={editedProfile.preferences.notifications.sms}
-              onChange={(e) => handleNestedInputChange('preferences', 'notifications', {
-                ...editedProfile.preferences.notifications,
-                sms: e.target.checked
-              })}
+              onChange={e =>
+                handleNestedInputChange('preferences', 'notifications', {
+                  ...editedProfile.preferences.notifications,
+                  sms: e.target.checked,
+                })
+              }
               disabled={!isEditing || readOnly}
               className="w-4 h-4 text-blue-500 border-white-4 rounded focus:ring-blue-500"
             />
@@ -402,10 +468,12 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
             <input
               type="checkbox"
               checked={editedProfile.preferences.notifications.push}
-              onChange={(e) => handleNestedInputChange('preferences', 'notifications', {
-                ...editedProfile.preferences.notifications,
-                push: e.target.checked
-              })}
+              onChange={e =>
+                handleNestedInputChange('preferences', 'notifications', {
+                  ...editedProfile.preferences.notifications,
+                  push: e.target.checked,
+                })
+              }
               disabled={!isEditing || readOnly}
               className="w-4 h-4 text-blue-500 border-white-4 rounded focus:ring-blue-500"
             />
@@ -419,18 +487,22 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
         <h4 className="text-gallery font-medium mb-3">Privacy Settings</h4>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-casper mb-2">Profile Visibility</label>
+            <label className="block text-sm font-medium text-casper mb-2">
+              Profile Visibility
+            </label>
             <select
               value={editedProfile.preferences.privacy.profileVisibility}
-              onChange={(e) => handleNestedInputChange('preferences', 'privacy', {
-                ...editedProfile.preferences.privacy,
-                profileVisibility: e.target.value
-              })}
+              onChange={e =>
+                handleNestedInputChange('preferences', 'privacy', {
+                  ...editedProfile.preferences.privacy,
+                  profileVisibility: e.target.value,
+                })
+              }
               disabled={!isEditing || readOnly}
               className={cn(
-                "w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none",
-                "border-white-4 focus:border-blue-500",
-                (!isEditing || readOnly) && "bg-white-1 cursor-not-allowed"
+                'w-full p-3 rounded-lg border bg-white-2 text-gallery focus:outline-none',
+                'border-white-4 focus:border-blue-500',
+                (!isEditing || readOnly) && 'bg-white-1 cursor-not-allowed'
               )}
             >
               <option value="public">Public</option>
@@ -443,10 +515,12 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
             <input
               type="checkbox"
               checked={editedProfile.preferences.privacy.showEmail}
-              onChange={(e) => handleNestedInputChange('preferences', 'privacy', {
-                ...editedProfile.preferences.privacy,
-                showEmail: e.target.checked
-              })}
+              onChange={e =>
+                handleNestedInputChange('preferences', 'privacy', {
+                  ...editedProfile.preferences.privacy,
+                  showEmail: e.target.checked,
+                })
+              }
               disabled={!isEditing || readOnly}
               className="w-4 h-4 text-blue-500 border-white-4 rounded focus:ring-blue-500"
             />
@@ -457,10 +531,12 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
             <input
               type="checkbox"
               checked={editedProfile.preferences.privacy.showPhone}
-              onChange={(e) => handleNestedInputChange('preferences', 'privacy', {
-                ...editedProfile.preferences.privacy,
-                showPhone: e.target.checked
-              })}
+              onChange={e =>
+                handleNestedInputChange('preferences', 'privacy', {
+                  ...editedProfile.preferences.privacy,
+                  showPhone: e.target.checked,
+                })
+              }
               disabled={!isEditing || readOnly}
               className="w-4 h-4 text-blue-500 border-white-4 rounded focus:ring-blue-500"
             />
@@ -479,18 +555,22 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-casper">Two-Factor Authentication</span>
-            <span className={cn(
-              "text-xs px-2 py-1 rounded-full",
-              editedProfile.security.twoFactorEnabled 
-                ? "bg-green-500/10 text-green-500" 
-                : "bg-red-500/10 text-red-500"
-            )}>
+            <span
+              className={cn(
+                'text-xs px-2 py-1 rounded-full',
+                editedProfile.security.twoFactorEnabled
+                  ? 'bg-green-500/10 text-green-500'
+                  : 'bg-red-500/10 text-red-500'
+              )}
+            >
               {editedProfile.security.twoFactorEnabled ? 'Enabled' : 'Disabled'}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-casper">Last Password Change</span>
-            <span className="text-gallery text-sm">{editedProfile.security.lastPasswordChange}</span>
+            <span className="text-gallery text-sm">
+              {editedProfile.security.lastPasswordChange}
+            </span>
           </div>
         </div>
       </div>
@@ -500,10 +580,15 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
         <h4 className="text-gallery font-medium mb-3">Recent Login History</h4>
         <div className="space-y-2">
           {editedProfile.security.loginHistory.map((login, index) => (
-            <div key={index} className="bg-white-2 rounded-lg p-3 border border-white-4">
+            <div
+              key={index}
+              className="bg-white-2 rounded-lg p-3 border border-white-4"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-gallery text-sm font-medium">{login.device}</div>
+                  <div className="text-gallery text-sm font-medium">
+                    {login.device}
+                  </div>
                   <div className="text-casper text-xs">{login.location}</div>
                 </div>
                 <div className="text-casper text-xs">{login.date}</div>
@@ -526,13 +611,17 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
               <div className="text-casper text-sm">{editedProfile.email}</div>
             </div>
           </div>
-          <span className={cn(
-            "text-xs px-2 py-1 rounded-full",
-            editedProfile.verification.emailVerified 
-              ? "bg-green-500/10 text-green-500" 
-              : "bg-red-500/10 text-red-500"
-          )}>
-            {editedProfile.verification.emailVerified ? 'Verified' : 'Unverified'}
+          <span
+            className={cn(
+              'text-xs px-2 py-1 rounded-full',
+              editedProfile.verification.emailVerified
+                ? 'bg-green-500/10 text-green-500'
+                : 'bg-red-500/10 text-red-500'
+            )}
+          >
+            {editedProfile.verification.emailVerified
+              ? 'Verified'
+              : 'Unverified'}
           </span>
         </div>
 
@@ -541,16 +630,22 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
             <Phone className="h-5 w-5 text-casper" />
             <div>
               <div className="text-gallery font-medium">Phone Verification</div>
-              <div className="text-casper text-sm">{editedProfile.phone || 'Not provided'}</div>
+              <div className="text-casper text-sm">
+                {editedProfile.phone || 'Not provided'}
+              </div>
             </div>
           </div>
-          <span className={cn(
-            "text-xs px-2 py-1 rounded-full",
-            editedProfile.verification.phoneVerified 
-              ? "bg-green-500/10 text-green-500" 
-              : "bg-red-500/10 text-red-500"
-          )}>
-            {editedProfile.verification.phoneVerified ? 'Verified' : 'Unverified'}
+          <span
+            className={cn(
+              'text-xs px-2 py-1 rounded-full',
+              editedProfile.verification.phoneVerified
+                ? 'bg-green-500/10 text-green-500'
+                : 'bg-red-500/10 text-red-500'
+            )}
+          >
+            {editedProfile.verification.phoneVerified
+              ? 'Verified'
+              : 'Unverified'}
           </span>
         </div>
 
@@ -558,17 +653,25 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
           <div className="flex items-center space-x-3">
             <Shield className="h-5 w-5 text-casper" />
             <div>
-              <div className="text-gallery font-medium">Identity Verification</div>
-              <div className="text-casper text-sm">Government ID verification</div>
+              <div className="text-gallery font-medium">
+                Identity Verification
+              </div>
+              <div className="text-casper text-sm">
+                Government ID verification
+              </div>
             </div>
           </div>
-          <span className={cn(
-            "text-xs px-2 py-1 rounded-full",
-            editedProfile.verification.identityVerified 
-              ? "bg-green-500/10 text-green-500" 
-              : "bg-red-500/10 text-red-500"
-          )}>
-            {editedProfile.verification.identityVerified ? 'Verified' : 'Unverified'}
+          <span
+            className={cn(
+              'text-xs px-2 py-1 rounded-full',
+              editedProfile.verification.identityVerified
+                ? 'bg-green-500/10 text-green-500'
+                : 'bg-red-500/10 text-red-500'
+            )}
+          >
+            {editedProfile.verification.identityVerified
+              ? 'Verified'
+              : 'Unverified'}
           </span>
         </div>
       </div>
@@ -579,7 +682,7 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
     { id: 'basic', label: 'Basic Info', icon: User },
     { id: 'preferences', label: 'Preferences', icon: Settings },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'verification', label: 'Verification', icon: CheckCircle }
+    { id: 'verification', label: 'Verification', icon: CheckCircle },
   ] as const
 
   return (
@@ -621,17 +724,17 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
       {/* Tabs */}
       <div className="border-b border-white-4 mb-6">
         <nav className="flex space-x-8">
-          {tabs.map((tab) => {
+          {tabs.map(tab => {
             const Icon = tab.icon
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors",
+                  'flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm transition-colors',
                   activeTab === tab.id
-                    ? "border-blue-500 text-blue-500"
-                    : "border-transparent text-casper hover:text-gallery"
+                    ? 'border-blue-500 text-blue-500'
+                    : 'border-transparent text-casper hover:text-gallery'
                 )}
               >
                 <Icon className="h-4 w-4" />

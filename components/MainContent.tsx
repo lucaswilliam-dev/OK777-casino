@@ -21,6 +21,8 @@ import CasinoCard from './ui/cards/CasinoCard'
 import RewardCard from './ui/cards/RewardCard'
 import FutureCard from './ui/cards/FutureCard'
 import GameCard from './ui/cards/GameCard'
+import CasinoCardSkeleton from './ui/cards/CasinoCardSkeleton'
+import FutureCardSkeleton from './ui/cards/FutureCardSkeleton'
 import { SuccessForm } from './auth/SuccessForm'
 import SwiperSlider from './ui/slider/SwiperSlider'
 import { HomepageSections } from './HomepageSections'
@@ -304,6 +306,7 @@ const MainContent: React.FC = () => {
     tableGames,
     latestBets,
     gameManufacturers,
+    isLoading: isLoadingMainContent,
   } = useMainContent()
 
   // Static data for latest earnings (app.latestEarining)
@@ -500,13 +503,20 @@ const MainContent: React.FC = () => {
     return allowedSections.includes(sectionType)
   }
 
+  // Generate skeleton data for loading states
+  const generateSkeletonData = (count: number) => {
+    return Array.from({ length: count }, (_, i) => ({ id: i }))
+  }
+
   // Game Grid Component
   const GameGrid: React.FC<{
     data: unknown[]
     renderCard: (item: unknown, index: number) => React.ReactNode
     viewAllLink: string
     maxCards?: number
-  }> = ({ data, renderCard, viewAllLink, maxCards }) => {
+    isLoading?: boolean
+    skeletonCard?: React.ComponentType
+  }> = ({ data, renderCard, viewAllLink, maxCards, isLoading, skeletonCard: SkeletonCard }) => {
     // Mobile: 3 per row, 6 rows = 18 cards max
     // Desktop: 6 per row, 4 rows = 24 cards max
     const mobileMaxCards = 18 // 6 rows × 3 cards
@@ -515,6 +525,26 @@ const MainContent: React.FC = () => {
     // Use responsive max cards - show 18 on mobile, 24 on desktop
     const maxDisplayCards = maxCards || desktopMaxCards
     const displayData = data.slice(0, maxDisplayCards)
+
+    // Show loading skeletons if loading
+    if (isLoading && SkeletonCard) {
+      const skeletonData = generateSkeletonData(maxDisplayCards)
+      return (
+        <div className="space-y-4">
+          {/* Mobile: 3 cards per row, max 18 cards (6 rows) */}
+          <div className="grid grid-cols-3 md:hidden gap-3">
+            {skeletonData
+              .slice(0, mobileMaxCards)
+              .map((_, index) => <SkeletonCard key={index} />)}
+          </div>
+
+          {/* Desktop: 6 cards per row, max 24 cards (4 rows) */}
+          <div className="hidden md:grid grid-cols-6 gap-3 xl:grid-cols-8">
+            {skeletonData.map((_, index) => <SkeletonCard key={index} />)}
+          </div>
+        </div>
+      )
+    }
 
     return (
       <div className="space-y-4">
@@ -683,9 +713,13 @@ const MainContent: React.FC = () => {
                 count={totalGames}
               />
               {isLoadingGames ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="text-white">Loading games...</div>
-                </div>
+                <GameGrid
+                  data={[]}
+                  renderCard={() => null}
+                  viewAllLink="#"
+                  isLoading={true}
+                  skeletonCard={CasinoCardSkeleton}
+                />
               ) : categoryGames.length > 0 ? (
                 <GameGrid
                   data={transformGamesForDisplay(categoryGames)}
@@ -709,31 +743,54 @@ const MainContent: React.FC = () => {
                 icon="/icons/Home.svg"
                 title={t('games.new')}
                 alt="lobby"
-                count={newGames.length}
+                count={isLoadingMainContent ? 0 : newGames.length}
               />
-              <SwiperSlider
-                key="new-launches-swiper"
-                autoplay={false}
-                data={newGames}
-                renderSlide={(card, index) => <CasinoCard {...card} />}
-                slidesPerView={7}
-                spaceBetween={12}
-                breakpoints={{
-                  320: { slidesPerView: 3.3 },
-                  375: { slidesPerView: 3.5 },
-                  425: { slidesPerView: 4.1 },
-                  768: { slidesPerView: 4.3 },
-                  1024: {
-                    slidesPerView: 5,
-                    spaceBetween: 20,
-                  },
-                  1440: { slidesPerView: 7.3 },
-                }}
-                showProgressBars={true}
-                initialSlide={carouselState.newLaunchesCurrentSlide}
-                onSlideChange={handleNewLaunchesSlideChange}
-                carouselId="new-launches"
-              />
+              {isLoadingMainContent ? (
+                <SwiperSlider
+                  key="new-launches-swiper-skeleton"
+                  autoplay={false}
+                  data={generateSkeletonData(7)}
+                  renderSlide={(_, index) => <CasinoCardSkeleton key={index} />}
+                  slidesPerView={7}
+                  spaceBetween={12}
+                  breakpoints={{
+                    320: { slidesPerView: 3.3 },
+                    375: { slidesPerView: 3.5 },
+                    425: { slidesPerView: 4.1 },
+                    768: { slidesPerView: 4.3 },
+                    1024: {
+                      slidesPerView: 5,
+                      spaceBetween: 20,
+                    },
+                    1440: { slidesPerView: 7.3 },
+                  }}
+                  showProgressBars={false}
+                />
+              ) : (
+                <SwiperSlider
+                  key="new-launches-swiper"
+                  autoplay={false}
+                  data={newGames}
+                  renderSlide={(card, index) => <CasinoCard {...card} />}
+                  slidesPerView={7}
+                  spaceBetween={12}
+                  breakpoints={{
+                    320: { slidesPerView: 3.3 },
+                    375: { slidesPerView: 3.5 },
+                    425: { slidesPerView: 4.1 },
+                    768: { slidesPerView: 4.3 },
+                    1024: {
+                      slidesPerView: 5,
+                      spaceBetween: 20,
+                    },
+                    1440: { slidesPerView: 7.3 },
+                  }}
+                  showProgressBars={true}
+                  initialSlide={carouselState.newLaunchesCurrentSlide}
+                  onSlideChange={handleNewLaunchesSlideChange}
+                  carouselId="new-launches"
+                />
+              )}
             </div>
           )}
           {/* Homepage Sections */}
@@ -744,7 +801,7 @@ const MainContent: React.FC = () => {
                 icon="/icons/Casino1.svg"
                 title={t('games.live')}
                 alt="lobby"
-                count={hotGames.length}
+                count={isLoadingMainContent ? 0 : hotGames.length}
               />
               <GameGrid
                 data={hotGames}
@@ -752,6 +809,8 @@ const MainContent: React.FC = () => {
                   <CasinoCard key={index} {...(card as any)} />
                 )}
                 viewAllLink="/casino/view-all?category=Live Casino&categoryType=Live Casino"
+                isLoading={isLoadingMainContent}
+                skeletonCard={CasinoCardSkeleton}
               />
             </div>
           )}
@@ -782,7 +841,7 @@ const MainContent: React.FC = () => {
                 icon="/icons/Slots.svg"
                 title={t('games.slots')}
                 alt="slots"
-                count={trendingGames.length}
+                count={isLoadingMainContent ? 0 : trendingGames.length}
               />
               <GameGrid
                 data={trendingGames}
@@ -790,6 +849,8 @@ const MainContent: React.FC = () => {
                   <CasinoCard key={index} {...(card as any)} />
                 )}
                 viewAllLink="/slots"
+                isLoading={isLoadingMainContent}
+                skeletonCard={CasinoCardSkeleton}
               />
             </div>
           )}
@@ -801,7 +862,7 @@ const MainContent: React.FC = () => {
                 icon="/icons/Futures1.svg"
                 title={t('games.pfFutures')}
                 alt="future"
-                count={aviationGames.length}
+                count={isLoadingMainContent ? 0 : aviationGames.length}
               />
 
               <GameGrid
@@ -810,6 +871,8 @@ const MainContent: React.FC = () => {
                   <FutureCard key={index} {...(card as any)} />
                 )}
                 viewAllLink="/futures"
+                isLoading={isLoadingMainContent}
+                skeletonCard={FutureCardSkeleton}
               />
             </div>
           )}
@@ -821,7 +884,7 @@ const MainContent: React.FC = () => {
                 icon="/icons/Cryptogra1.svg"
                 title={t('games.crypto')}
                 alt="cryptogra"
-                count={cryptoCards.length}
+                count={isLoadingMainContent ? 0 : cryptoCards.length}
               />
               <GameGrid
                 data={aviationGames}
@@ -829,6 +892,8 @@ const MainContent: React.FC = () => {
                   <CasinoCard key={index} {...(card as any)} />
                 )}
                 viewAllLink="/crypto-games"
+                isLoading={isLoadingMainContent}
+                skeletonCard={CasinoCardSkeleton}
               />
             </div>
           )}
@@ -840,7 +905,7 @@ const MainContent: React.FC = () => {
                 icon="/icons/Sport.svg"
                 title={t('games.sports')}
                 alt="Sport"
-                count={sportsGames.length}
+                count={isLoadingMainContent ? 0 : sportsGames.length}
               />
               <GameGrid
                 data={sportsGames}
@@ -848,6 +913,8 @@ const MainContent: React.FC = () => {
                   <CasinoCard key={index} {...(card as any)} />
                 )}
                 viewAllLink="/sports"
+                isLoading={isLoadingMainContent}
+                skeletonCard={CasinoCardSkeleton}
               />
             </div>
           )}
@@ -859,7 +926,7 @@ const MainContent: React.FC = () => {
                 icon="/icons/tablegame.svg"
                 title={t('games.table')}
                 alt="tablegame"
-                count={animalGames.length}
+                count={isLoadingMainContent ? 0 : animalGames.length}
               />
               <GameGrid
                 data={animalGames}
@@ -867,6 +934,8 @@ const MainContent: React.FC = () => {
                   <CasinoCard key={index} {...(card as any)} />
                 )}
                 viewAllLink="/table-games"
+                isLoading={isLoadingMainContent}
+                skeletonCard={CasinoCardSkeleton}
               />
             </div>
           )}
